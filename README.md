@@ -1,0 +1,2 @@
+# comfyui_LLM_schools
+用于微调LLM的comfyui节点库
