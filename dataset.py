@@ -61,7 +61,7 @@ class get_dataset_name:
 
     # OUTPUT_NODE = False
 
-    CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
+    CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
     def get_dataset(self, keyword, is_enable=True):
         if is_enable == False:
@@ -97,7 +97,7 @@ class download_dataset:
 
     OUTPUT_NODE = True
 
-    CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
+    CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
     def download(self, repo_id,cache_dir,token, is_enable=True,force_download=False):
         if is_enable == False:
@@ -131,7 +131,7 @@ class split_dataset:
 
     # OUTPUT_NODE = True
 
-    CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
+    CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
     def split(self, local_dir, is_enable=True):
         if is_enable == False:
