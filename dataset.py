@@ -82,7 +82,7 @@ class download_dataset:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "repo_id": ("STRING", {"default": "RussianNLP/wikiomnia"}),
+                "repo_id": ("STRING", {"default": "smangrul/hf-stack-v1"}),
                 "cache_dir": ("STRING", {"default": "datasets"}),
                 "token": ("STRING", {"default": "hf_XXX"}),
                 "force_download": ("BOOLEAN", {"default": False}),
