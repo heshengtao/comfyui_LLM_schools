@@ -106,7 +106,8 @@ class download_dataset:
             token = HF_token
         path = os.path.dirname(os.path.abspath(__file__))
         datasets_path = os.path.join(path, cache_dir)
-
+        if not os.path.exists(datasets_path):
+            os.makedirs(datasets_path)
         # 下载数据集并保存到本地缓存文件夹
         print("Start download...")
         local_dir = snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, force_download=force_download, token=token)
