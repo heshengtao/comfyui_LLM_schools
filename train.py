@@ -309,6 +309,7 @@ NODE_CLASS_MAPPINGS = {
     "LLM_data_collator": LLM_data_collator,
     "CausalLM_loader":CausalLM_loader,
     "LLM_Arguments":LLM_Arguments,
+    "LLM_Trainer":LLM_Trainer,
     }
 # 获取系统语言
 lang = locale.getdefaultlocale()[0]
@@ -329,9 +330,11 @@ if lang == "zh_CN":
     NODE_DISPLAY_NAME_MAPPINGS = {
         "LLM_data_collator": "数据生成器",
         "CausalLM_loader": "因果语言模型加载器",
-        "LLM_Arguments": "LLM训练参数",}
+        "LLM_Arguments": "LLM训练参数",
+        "LLM_Trainer": "LLM训练器",}
 else:
     NODE_DISPLAY_NAME_MAPPINGS = {
         "LLM_data_collator": "Data Collator",
         "CausalLM_loader": "Causal Language Model Loader",
-        "LLM_Arguments": "LLM Training Arguments",}
+        "LLM_Arguments": "LLM Training Arguments",
+        "LLM_Trainer": "LLM Trainer",}
