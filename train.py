@@ -1,4 +1,6 @@
+import datetime
 import gc
+import hashlib
 import json
 import locale
 import torch
@@ -181,6 +183,11 @@ class CausalLM_loader:
             self.model,
             self.tokenizer,
         )
+    @classmethod
+    def IS_CHANGED(s):
+        # 生成当前时间的哈希值
+        hash_value = hashlib.md5(str(datetime.datetime.now()).encode()).hexdigest()
+        return hash_value
 
 class LLM_Arguments:
     @classmethod
@@ -188,7 +195,7 @@ class LLM_Arguments:
         return {
             "required": {
                 "output_dir": ("STRING", {"default": "output"}),
-                "evaluation_strategy": ("STRING", {"default": "epoch"}),
+                "eval_strategy": ("STRING", {"default": "epoch"}),
                 "learning_rate": ("FLOAT", {"default": 1e-5}),
                 "per_device_train_batch_size": ("INT", {"default": 1}),
                 "per_device_eval_batch_size": ("INT", {"default": 1}),
@@ -212,7 +219,7 @@ class LLM_Arguments:
     def Argument(
             self,
             output_dir,
-            evaluation_strategy,
+            eval_strategy,
             learning_rate,
             per_device_train_batch_size,
             per_device_eval_batch_size,
@@ -225,7 +232,7 @@ class LLM_Arguments:
             return (None,)
         training_args = TrainingArguments(
             output_dir=output_dir,
-            evaluation_strategy=evaluation_strategy,
+            eval_strategy=eval_strategy,
             learning_rate=learning_rate,
             per_device_train_batch_size=per_device_train_batch_size,
             per_device_eval_batch_size=per_device_eval_batch_size,
@@ -274,6 +281,18 @@ class LLM_Trainer:
         results = trainer.evaluate()
         results_json = json.dumps(results, indent=4)
         return (results_json,)
+    
+def get_max_length(dataset, context_key='context', question_key='question'):
+    max_length = 0
+    for example in dataset:
+        context = example[context_key] if context_key in example else ""
+        question = example[question_key] if question_key in example else ""
+        context_length = len(context.split()) if isinstance(context, str) else 0
+        question_length = len(question.split()) if isinstance(question, str) else 0
+        total_length = context_length + question_length
+        if total_length > max_length:
+            max_length = total_length
+    return max_length
 
 class LLM_data_collator:
     @classmethod
@@ -281,7 +300,7 @@ class LLM_data_collator:
         return {
             "required": {
                 "tokenizer": ("CUSTOM", {}),
-                "datasets": ("DATASETS", {}),
+                "split_datasets": ("DATASETS", {}),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
@@ -289,21 +308,39 @@ class LLM_data_collator:
     RETURN_TYPES = ("TOKENIZED_DATASETS","DATA_COLLATOR",)
     RETURN_NAMES = ("tokenized_datasets","data_collator",)
 
-    FUNCTION = "Train"
+    FUNCTION = "collator"
 
     # OUTPUT_NODE = False
 
     CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
-    def Train(self, tokenizer,datasets, is_enable=True):
-        if is_enable == False:
+    def collator(self, tokenizer, split_datasets, is_enable=True):
+        if not is_enable:
             return (None,)
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        
+        # 确保 tokenizer 包含 pad_token
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        
+        max_length = get_max_length(split_datasets['train'])
+        
         def tokenize_function(examples):
-            return tokenizer(examples['text'], padding='max_length', truncation=True)
-        tokenized_datasets = datasets.map(tokenize_function, batched=True)
+            context = " ".join(examples['context']) if isinstance(examples['context'], list) else examples['context']
+            question = " ".join(examples['question']) if isinstance(examples['question'], list) else examples['question']
+            return tokenizer(
+                context + " " + question, 
+                padding='max_length', 
+                truncation=True,
+                max_length=max_length
+            )
+        
+        # 设置 tokenizer 的最大长度
+        tokenizer.model_max_length = max_length
+        
+        tokenized_datasets = split_datasets.map(tokenize_function, batched=True)
         data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-        return (tokenized_datasets,data_collator,)
+        
+        return (tokenized_datasets, data_collator,)
 
 NODE_CLASS_MAPPINGS = {
     "LLM_data_collator": LLM_data_collator,

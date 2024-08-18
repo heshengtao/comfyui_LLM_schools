@@ -11,39 +11,56 @@ config = configparser.ConfigParser()
 config.read(config_path)
 HF_token = config.get("TOKEN", "HF_token")
 
-from datasets import load_dataset
+from datasets import load_dataset,DatasetDict,load_from_disk,concatenate_datasets
 
-def load_datasets_from_cache(local_dir):
-    data_files = {'train': [], 'validation': [], 'test': []}
-    for root, _, files in os.walk(local_dir):
+def split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio):
+    # 获取所有文件路径，包括子文件夹中的文件
+    all_files = []
+    for root, dirs, files in os.walk(local_dir):
         for file in files:
-            file_path = os.path.join(root, file)
-            if file.endswith(('.csv', '.json', '.parquet', '.txt', '.xlsx', '.tsv', '.xml')):
-                if 'train' in file:
-                    data_files['train'].append(file_path)
-                elif 'validation' in file or 'dev' in file:
-                    data_files['validation'].append(file_path)
-                elif 'test' in file:
-                    data_files['test'].append(file_path)
-
-    datasets = {}
-    for split, files in data_files.items():
-        if files:
-            if files[0].endswith('.csv'):
-                datasets[split] = load_dataset('csv', data_files=files)
-            elif files[0].endswith('.json'):
-                datasets[split] = load_dataset('json', data_files=files)
-            elif files[0].endswith('.parquet'):
-                datasets[split] = load_dataset('parquet', data_files=files)
-            elif files[0].endswith('.txt'):
-                datasets[split] = load_dataset('text', data_files=files)
-            elif files[0].endswith('.xlsx'):
-                datasets[split] = load_dataset('excel', data_files=files)
-            elif files[0].endswith('.tsv'):
-                datasets[split] = load_dataset('csv', data_files=files, delimiter='\t')
-            elif files[0].endswith('.xml'):
-                datasets[split] = load_dataset('xml', data_files=files)
-    return datasets
+            all_files.append(os.path.join(root, file))
+    
+    # 根据文件扩展名加载数据集
+    datasets = []
+    for file in all_files:
+        if file.endswith('.csv'):
+            datasets.append(load_dataset('csv', data_files=file)['train'])
+        elif file.endswith('.json'):
+            datasets.append(load_dataset('json', data_files=file)['train'])
+        elif file.endswith('.parquet'):
+            datasets.append(load_dataset('parquet', data_files=file)['train'])
+        elif file.endswith('.txt'):
+            datasets.append(load_dataset('text', data_files=file)['train'])
+        elif file.endswith('.xlsx'):
+            datasets.append(load_dataset('excel', data_files=file)['train'])
+        elif file.endswith('.tsv'):
+            datasets.append(load_dataset('csv', data_files=file, delimiter='\t')['train'])
+        elif file.endswith('.xml'):
+            datasets.append(load_dataset('xml', data_files=file)['train'])
+        elif file.endswith('.arrow'):
+            datasets.append(load_from_disk(file))
+        else:
+            pass
+    
+    # 检查是否成功加载了任何数据集
+    if not datasets:
+        raise ValueError("No valid datasets found in the specified directory.")
+    
+    # 合并所有数据集
+    combined_dataset = concatenate_datasets(datasets)
+    
+    # 拆分数据集
+    train_test_split = combined_dataset.train_test_split(test_size=1 - train_ratio)
+    val_test_split = train_test_split['test'].train_test_split(test_size=test_ratio / (val_ratio + test_ratio))
+    
+    # 创建一个DatasetDict来保存拆分后的数据集
+    split_dataset = DatasetDict({
+        'train': train_test_split['train'],
+        'val': val_test_split['train'],
+        'test': val_test_split['test']
+    })
+    
+    return split_dataset
 class get_dataset_name:
     @classmethod
     def INPUT_TYPES(s):
@@ -82,10 +99,10 @@ class download_dataset:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "repo_id": ("STRING", {"default": "smangrul/hf-stack-v1"}),
+                "repo_id": ("STRING", {"default": "rajpurkar/squad_v2"}),
                 "cache_dir": ("STRING", {"default": "datasets"}),
                 "token": ("STRING", {"default": "hf_XXX"}),
-                "force_download": ("BOOLEAN", {"default": False}),
+                "force_download": ("BOOLEAN", {"default": True}),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
@@ -99,7 +116,7 @@ class download_dataset:
 
     CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
-    def download(self, repo_id,cache_dir,token, is_enable=True,force_download=False):
+    def download(self, repo_id,cache_dir,token, is_enable=True,force_download=True):
         if is_enable == False:
             return (None,)
         if token == "":
@@ -110,7 +127,13 @@ class download_dataset:
             os.makedirs(datasets_path)
         # 下载数据集并保存到本地缓存文件夹
         print("Start download...")
-        local_dir = snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, force_download=force_download, token=token)
+        local_dir = snapshot_download(
+            repo_id=repo_id,
+            repo_type="dataset",
+            cache_dir=datasets_path,
+            local_dir_use_symlinks=False,
+            force_download=force_download,
+            token=token)
         print("Download complete")
         
         return (local_dir,)
@@ -121,12 +144,15 @@ class split_dataset:
         return {
             "required": {
                 "local_dir": ("STRING", {"default": ""}),
+                "train_ratio": ("FLOAT", {"default": 0.8,"min":0.0,"max":1.0,"step":0.1}),
+                "val_ratio": ("FLOAT", {"default": 0.1,"min":0.0,"max":1.0,"step":0.1}),
+                "test_ratio": ("FLOAT", {"default": 0.1,"min":0.0,"max":1.0,"step":0.1}),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
 
-    RETURN_TYPES = ("DATASETS",)
-    RETURN_NAMES = ("datasets",)
+    RETURN_TYPES = ("DATASETS","STRING",)
+    RETURN_NAMES = ("split_datasets","log",)
 
     FUNCTION = "split"
 
@@ -134,12 +160,30 @@ class split_dataset:
 
     CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
-    def split(self, local_dir, is_enable=True):
-        if is_enable == False:
+    def split(self, local_dir, train_ratio, val_ratio, test_ratio, is_enable=True):
+        log = ""
+        if not is_enable:
             return (None,)
-        datasets = load_datasets_from_cache(local_dir)
+        if train_ratio + val_ratio + test_ratio != 1.0:
+            # 按比例缩放
+            total = train_ratio + val_ratio + test_ratio
+            train_ratio /= total
+            val_ratio /= total
+            test_ratio /= total
+            log += "The sum of the scale of the dataset is not 1, the scale is scaled.\n"
+        datasets = split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio)
         
-        return (datasets,)
+        # 查看数据集开头部分数据并存储到log变量中
+        log += "Train dataset head:\n"
+        log += str(datasets['train'].to_pandas().head()) + "\n\n"
+        
+        log += "Validation dataset head:\n"
+        log += str(datasets['val'].to_pandas().head()) + "\n\n"
+        
+        log += "Test dataset head:\n"
+        log += str(datasets['test'].to_pandas().head()) + "\n\n"
+        
+        return (datasets, log)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -169,11 +213,11 @@ else:
         "download_dataset": "download/load the HF dataset",
         "split_dataset": "split HF dataset",
         }
-
+    
 if __name__ == "__main__":
-    # 加载缓存目录中的数据集
-    local_dir = 'E:\GitHub\ComfyUI_windows_portable_nvidia\ComfyUI_windows_portable\ComfyUI\custom_nodes\comfyui_LLM_schools\datasets\datasets--abhi227070--imdb-dataset\snapshots\\331d3ed0738a51bc52d65db7e4d3fc6331fe4d0f'
-    datasets = load_datasets_from_cache(local_dir)
-    for split, dataset in datasets.items():
-        print(f"Loaded {split} dataset:")
-        print(dataset)
+    local_dir="D:\AI\AIhuitu\Blender_ComfyUI\Blender_ComfyUI_Mini\ComfyUI\custom_nodes\comfyui_LLM_schools\datasets\datasets--rajpurkar--squad_v2\snapshots\\3ffb306f725f7d2ce8394bc1873b24868140c412"
+    train_ratio = 0.8
+    val_ratio = 0.1
+    test_ratio = 0.1
+    split_datasets = split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio)
+    print(split_datasets['train'][0]) 
