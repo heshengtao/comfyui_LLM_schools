@@ -10,7 +10,6 @@ import configparser
 config = configparser.ConfigParser()
 config.read(config_path)
 HF_token = config.get("TOKEN", "HF_token")
-#获取当前脚本目录下的datasets文件夹路径
 
 class get_dataset_name:
     @classmethod
@@ -53,12 +52,13 @@ class download_dataset:
                 "repo_id": ("STRING", {"default": "RussianNLP/wikiomnia"}),
                 "cache_dir": ("STRING", {"default": "datasets"}),
                 "token": ("STRING", {"default": "hf_XXX"}),
+                "force_download": ("BOOLEAN", {"default": False}),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
 
-    RETURN_TYPES = ()
-    RETURN_NAMES = ()
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("local_dir",)
 
     FUNCTION = "download"
 
@@ -66,7 +66,7 @@ class download_dataset:
 
     CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
 
-    def download(self, repo_id,cache_dir,token, is_enable=True):
+    def download(self, repo_id,cache_dir,token, is_enable=True,force_download=False):
         if is_enable == False:
             return (None,)
         if token == "":
@@ -75,10 +75,11 @@ class download_dataset:
         datasets_path = os.path.join(path, cache_dir)
 
         # 下载数据集并保存到本地缓存文件夹
-        print("开始下载...")
-        snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, force_download=True, token=token)
-        print("下载完成")
-        return ()
+        print("Start download...")
+        local_dir = snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, force_download=force_download, token=token)
+        print("Download complete")
+        
+        return (local_dir,)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -98,12 +99,12 @@ if language == "zh_CN" or language=="en_US":
 if lang == "zh_CN":
     NODE_DISPLAY_NAME_MAPPINGS = {
         "get_dataset_name": "获取数据集名字",
-        "download_dataset": "下载数据集",
+        "download_dataset": "下载/加载HF数据集",
         }
 else:
     NODE_DISPLAY_NAME_MAPPINGS = {
         "get_dataset_name": "get dataset name",
-        "download_dataset": "download dataset",
+        "download_dataset": "download/load the HF dataset",
         }
 
 if __name__ == "__main__":
