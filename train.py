@@ -5,7 +5,7 @@ import torch
 from transformers import AutoTokenizer,DataCollatorWithPadding,AutoModelForCausalLM,TrainingArguments,Trainer
 if torch.cuda.is_available():
     from transformers import BitsAndBytesConfig
-
+import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, "config.ini")
 print(config_path)
@@ -193,7 +193,7 @@ class LLM_Arguments:
                 "per_device_train_batch_size": ("INT", {"default": 1}),
                 "per_device_eval_batch_size": ("INT", {"default": 1}),
                 "num_train_epochs": ("INT", {"default": 1}),
-                "weight_decay": ("FLOAT", {"default": 0.01}),
+                "weight_decay": ("FLOAT", {"default": 0.01, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "save_steps": ("INT", {"default": 1000}),
                 "save_total_limit": ("INT", {"default": 2}),
                 "is_enable": ("BOOLEAN", {"default": True}),
@@ -201,13 +201,13 @@ class LLM_Arguments:
         }
 
     RETURN_TYPES = ("TRAINING_ARGS",)
-    RETURN_NAMES = ("training_args")
+    RETURN_NAMES = ("training_args",)
 
     FUNCTION = "Argument"
 
     # OUTPUT_NODE = False
 
-    CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
 
     def Argument(
             self,
@@ -251,13 +251,13 @@ class LLM_Trainer:
         }
 
     RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("results")
+    RETURN_NAMES = ("results",)
 
     FUNCTION = "Trainer"
 
     # OUTPUT_NODE = False
 
-    CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
 
     def Trainer(self, model,training_args,tokenized_datasets,tokenizer,data_collator, is_enable=True):
         if is_enable == False:
@@ -286,8 +286,8 @@ class LLM_data_collator:
             }
         }
 
-    RETURN_TYPES = ("TOKENIZED_DATASETS","DATA_COLLATOR")
-    RETURN_NAMES = ("tokenized_datasets","data_collator")
+    RETURN_TYPES = ("TOKENIZED_DATASETS","DATA_COLLATOR",)
+    RETURN_NAMES = ("tokenized_datasets","data_collator",)
 
     FUNCTION = "Train"
 
