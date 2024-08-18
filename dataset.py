@@ -11,6 +11,39 @@ config = configparser.ConfigParser()
 config.read(config_path)
 HF_token = config.get("TOKEN", "HF_token")
 
+from datasets import load_dataset
+
+def load_datasets_from_cache(local_dir):
+    data_files = {'train': [], 'validation': [], 'test': []}
+    for root, _, files in os.walk(local_dir):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file.endswith(('.csv', '.json', '.parquet', '.txt', '.xlsx', '.tsv', '.xml')):
+                if 'train' in file:
+                    data_files['train'].append(file_path)
+                elif 'validation' in file or 'dev' in file:
+                    data_files['validation'].append(file_path)
+                elif 'test' in file:
+                    data_files['test'].append(file_path)
+
+    datasets = {}
+    for split, files in data_files.items():
+        if files:
+            if files[0].endswith('.csv'):
+                datasets[split] = load_dataset('csv', data_files=files)
+            elif files[0].endswith('.json'):
+                datasets[split] = load_dataset('json', data_files=files)
+            elif files[0].endswith('.parquet'):
+                datasets[split] = load_dataset('parquet', data_files=files)
+            elif files[0].endswith('.txt'):
+                datasets[split] = load_dataset('text', data_files=files)
+            elif files[0].endswith('.xlsx'):
+                datasets[split] = load_dataset('excel', data_files=files)
+            elif files[0].endswith('.tsv'):
+                datasets[split] = load_dataset('csv', data_files=files, delimiter='\t')
+            elif files[0].endswith('.xml'):
+                datasets[split] = load_dataset('xml', data_files=files)
+    return datasets
 class get_dataset_name:
     @classmethod
     def INPUT_TYPES(s):
@@ -81,10 +114,37 @@ class download_dataset:
         
         return (local_dir,)
 
+class split_dataset:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "local_dir": ("STRING", {"default": ""}),
+                "is_enable": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    RETURN_TYPES = ("DATASETS",)
+    RETURN_NAMES = ("datasets",)
+
+    FUNCTION = "split"
+
+    # OUTPUT_NODE = True
+
+    CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
+
+    def split(self, local_dir, is_enable=True):
+        if is_enable == False:
+            return (None,)
+        datasets = load_datasets_from_cache(local_dir)
+        
+        return (datasets,)
+
 
 NODE_CLASS_MAPPINGS = {
     "get_dataset_name": get_dataset_name,
     "download_dataset":download_dataset,
+    "split_dataset":split_dataset,
     }
 # 获取系统语言
 lang = locale.getdefaultlocale()[0]
@@ -98,14 +158,21 @@ if language == "zh_CN" or language=="en_US":
     lang=language
 if lang == "zh_CN":
     NODE_DISPLAY_NAME_MAPPINGS = {
-        "get_dataset_name": "获取数据集名字",
+        "get_dataset_name": "获取HF数据集repo_id",
         "download_dataset": "下载/加载HF数据集",
+        "split_dataset": "分割HF数据集",
         }
 else:
     NODE_DISPLAY_NAME_MAPPINGS = {
-        "get_dataset_name": "get dataset name",
+        "get_dataset_name": "get HF dataset repo_id",
         "download_dataset": "download/load the HF dataset",
+        "split_dataset": "split HF dataset",
         }
 
 if __name__ == "__main__":
-    print(get_dataset_name().get_dataset("imdb", True))
+    # 加载缓存目录中的数据集
+    local_dir = 'E:\GitHub\ComfyUI_windows_portable_nvidia\ComfyUI_windows_portable\ComfyUI\custom_nodes\comfyui_LLM_schools\datasets\datasets--abhi227070--imdb-dataset\snapshots\\331d3ed0738a51bc52d65db7e4d3fc6331fe4d0f'
+    datasets = load_datasets_from_cache(local_dir)
+    for split, dataset in datasets.items():
+        print(f"Loaded {split} dataset:")
+        print(dataset)
