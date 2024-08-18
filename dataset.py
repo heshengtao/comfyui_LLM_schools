@@ -2,6 +2,14 @@ import json
 import locale
 from huggingface_hub import list_datasets,snapshot_download
 import os
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(current_dir, "config.ini")
+print(config_path)
+import configparser
+config = configparser.ConfigParser()
+config.read(config_path)
+HF_token = config.get("TOKEN", "HF_token")
 #获取当前脚本目录下的datasets文件夹路径
 
 class get_dataset_name:
@@ -15,7 +23,7 @@ class get_dataset_name:
         }
 
     RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("tool",)
+    RETURN_NAMES = ("repo_id_list",)
 
     FUNCTION = "get_dataset"
 
@@ -42,7 +50,7 @@ class download_dataset:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "repo_id": ("STRING", {"default": "imdb"}),
+                "repo_id": ("STRING", {"default": "RussianNLP/wikiomnia"}),
                 "cache_dir": ("STRING", {"default": "datasets"}),
                 "token": ("STRING", {"default": "hf_XXX"}),
                 "is_enable": ("BOOLEAN", {"default": True}),
@@ -61,12 +69,15 @@ class download_dataset:
     def download(self, repo_id,cache_dir,token, is_enable=True):
         if is_enable == False:
             return (None,)
-
+        if token == "":
+            token = HF_token
         path = os.path.dirname(os.path.abspath(__file__))
         datasets_path = os.path.join(path, cache_dir)
 
         # 下载数据集并保存到本地缓存文件夹
-        snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, resume_download=True, token=token)
+        print("开始下载...")
+        snapshot_download(repo_id=repo_id, repo_type="dataset", cache_dir=datasets_path, local_dir_use_symlinks=False, force_download=True, token=token)
+        print("下载完成")
         return ()
 
 
@@ -76,13 +87,8 @@ NODE_CLASS_MAPPINGS = {
     }
 # 获取系统语言
 lang = locale.getdefaultlocale()[0]
-import os
-import sys
-current_dir = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(current_dir, "config.ini")
-import configparser
-config = configparser.ConfigParser()
-config.read(config_path)
+
+
 try:
     language = config.get("GENERAL", "language")
 except:
