@@ -4,6 +4,7 @@ import hashlib
 import json
 import locale
 import torch
+from tqdm.auto import tqdm
 from transformers import AutoTokenizer,DataCollatorWithPadding,AutoModelForCausalLM,TrainingArguments,Trainer
 if torch.cuda.is_available():
     from transformers import BitsAndBytesConfig
@@ -325,19 +326,48 @@ class LLM_data_collator:
         max_length = get_max_length(split_datasets['train'])
         
         def tokenize_function(examples):
-            context = " ".join(examples['context']) if isinstance(examples['context'], list) else examples['context']
-            question = " ".join(examples['question']) if isinstance(examples['question'], list) else examples['question']
-            return tokenizer(
-                context + " " + question, 
-                padding='max_length', 
-                truncation=True,
-                max_length=max_length
-            )
+            # 当使用 batched=True 时，examples 是一个字典，其中每个键对应一个列表
+            contexts = examples['context']  # 获取所有 context 的列表
+            questions = examples['question']  # 获取所有 question 的列表
+
+            # 初始化空列表来存储 tokenized 的结果
+            tokenized_outputs = []
+
+            # 遍历每一对 context 和 question
+            for context, question in zip(contexts, questions):
+                # 拼接 context 和 question
+                text = context + " " + question
+                # 使用 tokenizer 进行 tokenization
+                tokenized_output = tokenizer(
+                    text,
+                    padding='max_length',
+                    truncation=True,
+                    max_length=max_length
+                )
+                tokenized_outputs.append(tokenized_output)
+
+            # 将 tokenized_outputs 转换为 Dataset 可以理解的格式
+            return {
+                k: [example[k] for example in tokenized_outputs]
+                for k in tokenized_outputs[0].keys()
+            }
         
-        # 设置 tokenizer 的最大长度
-        tokenizer.model_max_length = max_length
+        # 创建一个 tqdm 进度条
+        tokenized_datasets = split_datasets.map(
+            tokenize_function,
+            batched=True,
+            desc="Tokenizing datasets",
+            remove_columns=split_datasets['train'].column_names,  # 移除原始列
+            load_from_cache_file=False,  # 避免缓存问题
+            with_indices=False,  # 不需要索引
+        )
         
-        tokenized_datasets = split_datasets.map(tokenize_function, batched=True)
+        # 立即转换为 PyTorch 格式
+        tokenized_datasets = tokenized_datasets.with_format("torch")
+        
+        # 使用 tqdm 包装 map 的迭代器
+        tokenized_datasets = tqdm(tokenized_datasets, desc="Processing tokenized datasets")
+        
         data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
         
         return (tokenized_datasets, data_collator,)

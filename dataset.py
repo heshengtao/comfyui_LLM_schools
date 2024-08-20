@@ -56,7 +56,7 @@ def split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio):
     # 创建一个DatasetDict来保存拆分后的数据集
     split_dataset = DatasetDict({
         'train': train_test_split['train'],
-        'val': val_test_split['train'],
+        'validation': val_test_split['train'],
         'test': val_test_split['test']
     })
     
@@ -178,7 +178,7 @@ class split_dataset:
         log += str(datasets['train'].to_pandas().head()) + "\n\n"
         
         log += "Validation dataset head:\n"
-        log += str(datasets['val'].to_pandas().head()) + "\n\n"
+        log += str(datasets['validation'].to_pandas().head()) + "\n\n"
         
         log += "Test dataset head:\n"
         log += str(datasets['test'].to_pandas().head()) + "\n\n"
