@@ -49,6 +49,12 @@ def split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio):
     # 合并所有数据集
     combined_dataset = concatenate_datasets(datasets)
     
+    # 过滤掉没有答案的样本
+    def has_answer(example):
+        return len(example['answers']['text']) > 0
+
+    combined_dataset = combined_dataset.filter(has_answer)
+    
     # 拆分数据集
     train_test_split = combined_dataset.train_test_split(test_size=1 - train_ratio)
     val_test_split = train_test_split['test'].train_test_split(test_size=test_ratio / (val_ratio + test_ratio))

@@ -5,10 +5,11 @@ import json
 import locale
 from adapters import AdapterConfig, AdapterTrainer
 import torch
-from transformers import AutoTokenizer,DataCollatorWithPadding,AutoModelForCausalLM,TrainingArguments,Trainer
+from transformers import AutoTokenizer,DataCollatorForLanguageModeling,AutoModelForCausalLM,TrainingArguments,Trainer
 if torch.cuda.is_available():
     from transformers import BitsAndBytesConfig
 import os
+import torch.nn.functional as F
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, "config.ini")
 print(config_path)
@@ -122,7 +123,7 @@ class CausalLM_loader:
             self.dtype = dtype
 
         if self.tokenizer == "":
-            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True,device_map=device)
         if self.model == "":
             if device == "cuda":
                 if dtype == "float32":
@@ -179,7 +180,8 @@ class CausalLM_loader:
                     self.model = AutoModelForCausalLM.from_pretrained(
                         model_path, trust_remote_code=True, device_map="mps"
                     ).half()
-            self.model = self.model.eval()
+        for param in self.model.parameters():
+            param.requires_grad = True
         return (
             self.model,
             self.tokenizer,
@@ -261,22 +263,21 @@ class LLM_Trainer:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("results",)
 
-    FUNCTION = "Trainer"
+    FUNCTION = "Train"
 
     # OUTPUT_NODE = False
 
     CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
 
-    def Trainer(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
+    def Train(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
         if is_enable == False:
             return (None,)
 
-        # 如果模型是非量化的，使用标准 Trainer 进行训练
         trainer = Trainer(
             model=model,
             args=training_args,
-            train_dataset=tokenized_datasets['train'],
-            eval_dataset=tokenized_datasets['validation'],
+            train_dataset=tokenized_datasets["train"],
+            eval_dataset=tokenized_datasets["validation"],
             tokenizer=tokenizer,
             data_collator=data_collator,
         )
@@ -325,54 +326,72 @@ class LLM_data_collator:
     def collator(self, tokenizer, split_datasets, is_enable=True):
         if not is_enable:
             return (None,)
-        
-        # 确保 tokenizer 包含 pad_token
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        
         max_length = get_max_length(split_datasets['train'])
-        
-        def tokenize_function(examples):
-            # 当使用 batched=True 时，examples 是一个字典，其中每个键对应一个列表
-            contexts = examples['context']  # 获取所有 context 的列表
-            questions = examples['question']  # 获取所有 question 的列表
+        # 设置 pad_token
+        tokenizer.pad_token = tokenizer.eos_token
 
-            # 初始化空列表来存储 tokenized 的结果
-            tokenized_outputs = []
+        # 预处理函数
+        def preprocess_function(examples):
+            questions = [q.strip() for q in examples["question"]]
+            inputs = tokenizer(
+                questions,
+                examples["context"],
+                max_length=max_length,
+                truncation="only_second",
+                return_offsets_mapping=True,
+                padding="max_length",
+            )
 
-            # 遍历每一对 context 和 question
-            for context, question in zip(contexts, questions):
-                # 拼接 context 和 question
-                text = context + " " + question
-                # 使用 tokenizer 进行 tokenization
-                tokenized_output = tokenizer(
-                    text,
-                    padding='max_length',
-                    truncation=True,
-                    max_length=max_length
-                )
-                tokenized_outputs.append(tokenized_output)
+            offset_mapping = inputs.pop("offset_mapping")
+            answers = examples["answers"]
+            start_positions = []
+            end_positions = []
 
-            # 将 tokenized_outputs 转换为 Dataset 可以理解的格式
-            return {
-                k: [example[k] for example in tokenized_outputs]
-                for k in tokenized_outputs[0].keys()
-            }
+            for i, offset in enumerate(offset_mapping):
+                answer = answers[i]
+                if len(answer["answer_start"]) == 0:
+                    start_positions.append(0)
+                    end_positions.append(0)
+                    continue
+
+                start_char = answer["answer_start"][0]
+                end_char = start_char + len(answer["text"][0])
+                sequence_ids = inputs.sequence_ids(i)
+
+                # Find the start and end of the context
+                context_start = sequence_ids.index(1)
+                context_end = len(sequence_ids) - 1 - sequence_ids[::-1].index(1)
+
+                # If the answer is not fully inside the context, label it (0, 0)
+                if not (offset[context_start][0] <= start_char and offset[context_end][1] >= end_char):
+                    start_positions.append(0)
+                    end_positions.append(0)
+                else:
+                    # Otherwise it's the start and end token positions
+                    start_token_idx = None
+                    end_token_idx = None
+                    for idx, (start, end) in enumerate(offset):
+                        if start <= start_char < end:
+                            start_token_idx = idx
+                        if start < end_char <= end:
+                            end_token_idx = idx
+                            break
+                    if start_token_idx is not None and end_token_idx is not None:
+                        start_positions.append(start_token_idx)
+                        end_positions.append(end_token_idx)
+                    else:
+                        start_positions.append(0)
+                        end_positions.append(0)
+
+            inputs["start_positions"] = start_positions
+            inputs["end_positions"] = end_positions
+            return inputs
+
+        # 预处理数据集
+        tokenized_datasets = split_datasets.map(preprocess_function, batched=True, remove_columns=split_datasets["train"].column_names)
+
         
-        # 创建一个 tqdm 进度条
-        tokenized_datasets = split_datasets.map(
-            tokenize_function,
-            batched=True,
-            desc="Tokenizing datasets",
-            remove_columns=split_datasets['train'].column_names,  # 移除原始列
-            load_from_cache_file=False,  # 避免缓存问题
-            with_indices=False,  # 不需要索引
-        )
-        
-        # 立即转换为 PyTorch 格式
-        tokenized_datasets = tokenized_datasets.with_format("torch")
-        
-        data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
         
         return (tokenized_datasets, data_collator,)
 
