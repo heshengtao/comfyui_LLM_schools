@@ -3,8 +3,8 @@ import gc
 import hashlib
 import json
 import locale
+from adapters import AdapterConfig, AdapterTrainer
 import torch
-from tqdm.auto import tqdm
 from transformers import AutoTokenizer,DataCollatorWithPadding,AutoModelForCausalLM,TrainingArguments,Trainer
 if torch.cuda.is_available():
     from transformers import BitsAndBytesConfig
@@ -267,22 +267,50 @@ class LLM_Trainer:
 
     CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
 
-    def Trainer(self, model,training_args,tokenized_datasets,tokenizer,data_collator, is_enable=True):
+    def Trainer(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
         if is_enable == False:
             return (None,)
-        trainer = Trainer(
-            model=model,
-            args=training_args,
-            train_dataset=tokenized_datasets['train'],
-            eval_dataset=tokenized_datasets['validation'],
-            tokenizer=tokenizer,
-            data_collator=data_collator,
-        )
+        
+        # 检查模型是否已量化
+        is_quantized = hasattr(model, 'quantize') and model.quantize is not None
+        
+        # 定义 Adapter 的配置
+        adapter_config = AdapterConfig.load("pfeiffer", reduction_factor=2)
+
+        if is_quantized:
+            # 如果模型是量化的，添加 Adapter
+            model.add_adapter("qa_adapter", config=adapter_config)
+            model.train_adapter("qa_adapter")
+            
+            # 使用 AdapterTrainer 进行训练
+            trainer = AdapterTrainer(
+                model=model,
+                args=training_args,
+                train_dataset=tokenized_datasets['train'],
+                eval_dataset=tokenized_datasets['validation'],
+                tokenizer=tokenizer,
+                data_collator=data_collator,
+            )
+        else:
+            # 如果模型是非量化的，使用标准 Trainer 进行训练
+            trainer = Trainer(
+                model=model,
+                args=training_args,
+                train_dataset=tokenized_datasets['train'],
+                eval_dataset=tokenized_datasets['validation'],
+                tokenizer=tokenizer,
+                data_collator=data_collator,
+            )
+        
+        # 开始训练
         trainer.train()
+
+        # 评估
         results = trainer.evaluate()
         results_json = json.dumps(results, indent=4)
+        
         return (results_json,)
-    
+        
 def get_max_length(dataset, context_key='context', question_key='question'):
     max_length = 0
     for example in dataset:
@@ -364,9 +392,6 @@ class LLM_data_collator:
         
         # 立即转换为 PyTorch 格式
         tokenized_datasets = tokenized_datasets.with_format("torch")
-        
-        # 使用 tqdm 包装 map 的迭代器
-        tokenized_datasets = tqdm(tokenized_datasets, desc="Processing tokenized datasets")
         
         data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
         
