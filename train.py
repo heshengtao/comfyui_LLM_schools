@@ -270,37 +270,16 @@ class LLM_Trainer:
     def Trainer(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
         if is_enable == False:
             return (None,)
-        
-        # 检查模型是否已量化
-        is_quantized = hasattr(model, 'quantize') and model.quantize is not None
-        
-        # 定义 Adapter 的配置
-        adapter_config = AdapterConfig.load("pfeiffer", reduction_factor=2)
 
-        if is_quantized:
-            # 如果模型是量化的，添加 Adapter
-            model.add_adapter("qa_adapter", config=adapter_config)
-            model.train_adapter("qa_adapter")
-            
-            # 使用 AdapterTrainer 进行训练
-            trainer = AdapterTrainer(
-                model=model,
-                args=training_args,
-                train_dataset=tokenized_datasets['train'],
-                eval_dataset=tokenized_datasets['validation'],
-                tokenizer=tokenizer,
-                data_collator=data_collator,
-            )
-        else:
-            # 如果模型是非量化的，使用标准 Trainer 进行训练
-            trainer = Trainer(
-                model=model,
-                args=training_args,
-                train_dataset=tokenized_datasets['train'],
-                eval_dataset=tokenized_datasets['validation'],
-                tokenizer=tokenizer,
-                data_collator=data_collator,
-            )
+        # 如果模型是非量化的，使用标准 Trainer 进行训练
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=tokenized_datasets['train'],
+            eval_dataset=tokenized_datasets['validation'],
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+        )
         
         # 开始训练
         trainer.train()
