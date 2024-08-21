@@ -1,0 +1,15 @@
+[project]
+name = "comfyui_llm_schools"
+description = "ComfyUI node library for fine-tuning LLMs"
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = ["huggingface_hub", "datasets", "transformers", "peft"]
+
+[project.urls]
+Repository = "https://github.com/heshengtao/comfyui_LLM_schools"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyui_LLM_schools"
+Icon = ""
