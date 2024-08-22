@@ -270,7 +270,8 @@ class LLM_Trainer:
     def Train(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
         if is_enable == False:
             return (None,)
-
+        torch.set_grad_enabled(True)
+        model = model.train()
         trainer = Trainer(
             model=model,
             args=training_args,
@@ -279,8 +280,7 @@ class LLM_Trainer:
             tokenizer=tokenizer,
             data_collator=data_collator,
         )
-        torch.set_grad_enabled(True)
-        model = model.train()
+
         # 开始训练
         trainer.train()
 
