@@ -1,3 +1,4 @@
+import datetime
 import json
 import locale
 from huggingface_hub import list_datasets,snapshot_download
@@ -7,6 +8,7 @@ import sys
 import torch
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, "config.ini")
+dataset_path = os.path.join(current_dir, "datasets")
 print(config_path)
 import configparser
 config = configparser.ConfigParser()
@@ -152,6 +154,7 @@ class split_dataset:
         return {
             "required": {
                 "local_dir": ("STRING", {"default": ""}),
+                "savepath": ("STRING", {"default": "split_dataset"}),
                 "train_ratio": ("FLOAT", {"default": 0.8,"min":0.0,"max":1.0,"step":0.1}),
                 "val_ratio": ("FLOAT", {"default": 0.1,"min":0.0,"max":1.0,"step":0.1}),
                 "test_ratio": ("FLOAT", {"default": 0.1,"min":0.0,"max":1.0,"step":0.1}),
@@ -159,8 +162,8 @@ class split_dataset:
             }
         }
 
-    RETURN_TYPES = ("DATASETS","STRING",)
-    RETURN_NAMES = ("split_datasets","log",)
+    RETURN_TYPES = ("STRING","STRING",)
+    RETURN_NAMES = ("split_datapaths","log",)
 
     FUNCTION = "split"
 
@@ -168,10 +171,7 @@ class split_dataset:
 
     CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
-    def split(self, local_dir, train_ratio, val_ratio, test_ratio, is_enable=True):
-        print(torch.is_grad_enabled())
-        torch.set_grad_enabled(True)
-        print(torch.is_grad_enabled())
+    def split(self, local_dir,savepath, train_ratio, val_ratio, test_ratio, is_enable=True):
         log = ""
         if not is_enable:
             return (None,)
@@ -183,7 +183,11 @@ class split_dataset:
             test_ratio /= total
             log += "The sum of the scale of the dataset is not 1, the scale is scaled.\n"
         datasets = split_datasets_from_hf_cache(local_dir, train_ratio, val_ratio, test_ratio)
-        
+        # 时间戳
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        datasets.save_to_disk(os.path.join(dataset_path, f"{savepath}_{timestamp}"))
+        # 保存数据集到本地
+        split_datapaths= os.path.join(dataset_path, f"{savepath}_{timestamp}")
         # 查看数据集开头部分数据并存储到log变量中
         log += "Train dataset head:\n"
         log += str(datasets['train'].to_pandas().head()) + "\n\n"
@@ -193,8 +197,10 @@ class split_dataset:
         
         log += "Test dataset head:\n"
         log += str(datasets['test'].to_pandas().head()) + "\n\n"
-        
-        return (datasets, log,)
+
+
+
+        return (split_datapaths, log,)
 
 
 NODE_CLASS_MAPPINGS = {
