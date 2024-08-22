@@ -79,6 +79,9 @@ class CausalLM_loader:
     CATEGORY = "大模型学校（llm_schools）/加载器（loader）"
 
     def chatbot(self, model_name, model_path, tokenizer_path, device, dtype, is_locked=False):
+        print(torch.is_grad_enabled())
+        torch.set_grad_enabled(True)
+        print(torch.is_grad_enabled())
         self.is_locked = is_locked
         if CausalLM_loader.original_IS_CHANGED is None:
             # 保存原始的IS_CHANGED方法的引用
@@ -270,7 +273,9 @@ class LLM_Trainer:
     def Train(self, model, training_args, tokenized_datasets, tokenizer, data_collator, is_enable=True):
         if is_enable == False:
             return (None,)
+        print(torch.is_grad_enabled())
         torch.set_grad_enabled(True)
+        print(torch.is_grad_enabled())
         model = model.train()
         trainer = Trainer(
             model=model,
@@ -325,6 +330,9 @@ class LLM_data_collator:
     def collator(self, tokenizer, split_datasets, is_enable=True):
         if not is_enable:
             return (None,)
+        print(torch.is_grad_enabled())
+        torch.set_grad_enabled(True)
+        print(torch.is_grad_enabled())
         max_length = get_max_length(split_datasets['train'])
         # 设置 pad_token
         tokenizer.pad_token = tokenizer.eos_token

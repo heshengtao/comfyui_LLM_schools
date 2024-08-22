@@ -3,6 +3,8 @@ import locale
 from huggingface_hub import list_datasets,snapshot_download
 import os
 import sys
+
+import torch
 current_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(current_dir, "config.ini")
 print(config_path)
@@ -167,6 +169,9 @@ class split_dataset:
     CATEGORY = "大模型学校（llm_schools）/数据预处理（data preprocessing）"
 
     def split(self, local_dir, train_ratio, val_ratio, test_ratio, is_enable=True):
+        print(torch.is_grad_enabled())
+        torch.set_grad_enabled(True)
+        print(torch.is_grad_enabled())
         log = ""
         if not is_enable:
             return (None,)
