@@ -1,0 +1,435 @@
+{
+  "last_node_id": 93,
+  "last_link_id": 67,
+  "nodes": [
+    {
+      "id": 88,
+      "type": "LLM_Arguments",
+      "pos": [
+        142,
+        1139
+      ],
+      "size": {
+        "0": 315,
+        "1": 274
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "training_args",
+          "type": "TRAINING_ARGS",
+          "links": [
+            57
+          ],
+          "shape": 3,
+          "label": "training_args",
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLM_Arguments"
+      },
+      "widgets_values": [
+        "output",
+        "epoch",
+        0.00001,
+        1,
+        1,
+        1,
+        0.01,
+        1000,
+        2,
+        true
+      ]
+    },
+    {
+      "id": 87,
+      "type": "CausalLM_loader",
+      "pos": [
+        141,
+        877
+      ],
+      "size": {
+        "0": 315,
+        "1": 198
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "model",
+          "type": "CUSTOM",
+          "links": [
+            65
+          ],
+          "shape": 3,
+          "label": "model",
+          "slot_index": 0
+        },
+        {
+          "name": "tokenizer",
+          "type": "CUSTOM",
+          "links": [
+            64,
+            66
+          ],
+          "shape": 3,
+          "label": "tokenizer",
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CausalLM_loader"
+      },
+      "widgets_values": [
+        "gpt2",
+        "",
+        "",
+        "auto",
+        "float32",
+        true
+      ]
+    },
+    {
+      "id": 86,
+      "type": "split_dataset",
+      "pos": [
+        146,
+        623
+      ],
+      "size": {
+        "0": 315,
+        "1": 174
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "split_datasets",
+          "type": "DATASETS",
+          "links": [
+            51
+          ],
+          "shape": 3,
+          "label": "split_datasets",
+          "slot_index": 0
+        },
+        {
+          "name": "log",
+          "type": "STRING",
+          "links": [
+            67
+          ],
+          "shape": 3,
+          "label": "log"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "split_dataset"
+      },
+      "widgets_values": [
+        "D:\\AI\\AIhuitu\\Blender_ComfyUI\\Blender_ComfyUI_Mini\\ComfyUI\\custom_nodes\\comfyui_LLM_schools\\datasets\\datasets--rajpurkar--squad_v2\\snapshots\\\\3ffb306f725f7d2ce8394bc1873b24868140c412",
+        0.8,
+        0.1,
+        0.1,
+        true
+      ]
+    },
+    {
+      "id": 93,
+      "type": "show_text_party",
+      "pos": [
+        588,
+        646
+      ],
+      "size": {
+        "0": 454.49658203125,
+        "1": 248.48123168945312
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 67,
+          "widget": {
+            "name": "text"
+          },
+          "label": "text",
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6,
+          "label": "STRING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "show_text_party"
+      },
+      "widgets_values": [
+        "",
+        "Train dataset head:\n                         id  ...                                            answers\n0  57293d721d046914007791c3  ...         {'text': ['a pair'], 'answer_start': [79]}\n1  56ddd1059a695914005b95f3  ...  {'text': ['collaborative institute-industry pr...\n2  5726ba5f708984140094cf6b  ...  {'text': ['modern Chinese dictionaries'], 'ans...\n3  5734466eacc1501500babd78  ...  {'text': ['Virginia State Capitol'], 'answer_s...\n4  572847c4ff5b5019007da0ba  ...        {'text': ['Syrian'], 'answer_start': [182]}\n\n[5 rows x 5 columns]\n\nValidation dataset head:\n                         id  ...                                            answers\n0  56d3867b59d6e4140014663e  ...    {'text': ['Season six'], 'answer_start': [720]}\n1  572652fddd62a815002e818b  ...        {'text': ['Islam'], 'answer_start': [1000]}\n2  5705eece75f01819005e778c  ...  {'text': ['The Thunderer'], 'answer_start': [4...\n3  5731edafe17f3d140042255b  ...  {'text': ['General Baptists'], 'answer_start':...\n4  570e67a80b85d914000d7e93  ...  {'text': ['Brisbane and Perth'], 'answer_start...\n\n[5 rows x 5 columns]\n\nTest dataset head:\n                         id  ...                                            answers\n0  570d76f1fed7b91900d46170  ...  {'text': ['commands from the national governme...\n1  5729d8b71d04691400779630  ...  {'text': ['4,100 gallons'], 'answer_start': [2...\n2  56f72e823d8e2e1400e373f1  ...   {'text': ['Anna Lelkes'], 'answer_start': [399]}\n3  572f5f7a947a6a140053c8d0  ...  {'text': ['Ottoman Empire cities of Konya and ...\n4  5727fc492ca10214002d9ab5  ...          {'text': ['1630'], 'answer_start': [114]}\n\n[5 rows x 5 columns]\n\n"
+      ]
+    },
+    {
+      "id": 90,
+      "type": "LLM_data_collator",
+      "pos": [
+        621,
+        982
+      ],
+      "size": {
+        "0": 328.3953552246094,
+        "1": 78
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "tokenizer",
+          "type": "CUSTOM",
+          "link": 66,
+          "label": "tokenizer"
+        },
+        {
+          "name": "split_datasets",
+          "type": "DATASETS",
+          "link": 51,
+          "label": "split_datasets"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tokenized_datasets",
+          "type": "TOKENIZED_DATASETS",
+          "links": [
+            62
+          ],
+          "shape": 3,
+          "label": "tokenized_datasets",
+          "slot_index": 0
+        },
+        {
+          "name": "data_collator",
+          "type": "DATA_COLLATOR",
+          "links": [
+            63
+          ],
+          "shape": 3,
+          "label": "data_collator",
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLM_data_collator"
+      },
+      "widgets_values": [
+        true
+      ]
+    },
+    {
+      "id": 91,
+      "type": "show_text_party",
+      "pos": [
+        1114,
+        1065
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 61,
+          "widget": {
+            "name": "text"
+          },
+          "label": "text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6,
+          "label": "STRING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "show_text_party"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 92,
+      "type": "LLM_Trainer",
+      "pos": [
+        626,
+        1191
+      ],
+      "size": {
+        "0": 330,
+        "1": 162
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "CUSTOM",
+          "link": 65,
+          "label": "model"
+        },
+        {
+          "name": "training_args",
+          "type": "TRAINING_ARGS",
+          "link": 57,
+          "label": "training_args"
+        },
+        {
+          "name": "tokenized_datasets",
+          "type": "TOKENIZED_DATASETS",
+          "link": 62,
+          "label": "tokenized_datasets"
+        },
+        {
+          "name": "tokenizer",
+          "type": "CUSTOM",
+          "link": 64,
+          "label": "tokenizer"
+        },
+        {
+          "name": "data_collator",
+          "type": "DATA_COLLATOR",
+          "link": 63,
+          "label": "data_collator"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "results",
+          "type": "STRING",
+          "links": [
+            61
+          ],
+          "shape": 3,
+          "label": "results",
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLM_Trainer"
+      },
+      "widgets_values": [
+        "auto"
+      ]
+    }
+  ],
+  "links": [
+    [
+      51,
+      86,
+      0,
+      90,
+      1,
+      "DATASETS"
+    ],
+    [
+      57,
+      88,
+      0,
+      92,
+      1,
+      "TRAINING_ARGS"
+    ],
+    [
+      61,
+      92,
+      0,
+      91,
+      0,
+      "STRING"
+    ],
+    [
+      62,
+      90,
+      0,
+      92,
+      2,
+      "TOKENIZED_DATASETS"
+    ],
+    [
+      63,
+      90,
+      1,
+      92,
+      4,
+      "DATA_COLLATOR"
+    ],
+    [
+      64,
+      87,
+      1,
+      92,
+      3,
+      "CUSTOM"
+    ],
+    [
+      65,
+      87,
+      0,
+      92,
+      0,
+      "CUSTOM"
+    ],
+    [
+      66,
+      87,
+      1,
+      90,
+      0,
+      "CUSTOM"
+    ],
+    [
+      67,
+      86,
+      1,
+      93,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.45,
+      "offset": {
+        "0": 1044.5555555555554,
+        "1": -340.8888888888889
+      }
+    }
+  },
+  "version": 0.4
+}
