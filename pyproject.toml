@@ -10,6 +10,6 @@ Repository = "https://github.com/heshengtao/comfyui_LLM_schools"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "heshengtao"
 DisplayName = "comfyui_LLM_schools"
 Icon = ""
