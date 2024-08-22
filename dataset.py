@@ -189,7 +189,7 @@ class split_dataset:
         log += "Test dataset head:\n"
         log += str(datasets['test'].to_pandas().head()) + "\n\n"
         
-        return (datasets, log)
+        return (datasets, log,)
 
 
 NODE_CLASS_MAPPINGS = {

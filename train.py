@@ -180,8 +180,6 @@ class CausalLM_loader:
                     self.model = AutoModelForCausalLM.from_pretrained(
                         model_path, trust_remote_code=True, device_map="mps"
                     ).half()
-        for param in self.model.parameters():
-            param.requires_grad = True
         return (
             self.model,
             self.tokenizer,
@@ -199,10 +197,10 @@ class LLM_Arguments:
             "required": {
                 "output_dir": ("STRING", {"default": "output"}),
                 "eval_strategy": ("STRING", {"default": "epoch"}),
-                "learning_rate": ("FLOAT", {"default": 1e-5}),
+                "learning_rate": ("FLOAT", {"default": 2e-5}),
                 "per_device_train_batch_size": ("INT", {"default": 1}),
                 "per_device_eval_batch_size": ("INT", {"default": 1}),
-                "num_train_epochs": ("INT", {"default": 1}),
+                "num_train_epochs": ("INT", {"default": 3}),
                 "weight_decay": ("FLOAT", {"default": 0.01, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "save_steps": ("INT", {"default": 1000}),
                 "save_total_limit": ("INT", {"default": 2}),
@@ -281,7 +279,8 @@ class LLM_Trainer:
             tokenizer=tokenizer,
             data_collator=data_collator,
         )
-        
+        torch.set_grad_enabled(True)
+        model = model.train()
         # 开始训练
         trainer.train()
 
