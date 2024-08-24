@@ -166,63 +166,7 @@ class Lora_or_adapter_Arguments:
             "required": {
                 "r": ("INT", {"default": 8, "min": 1, "max": 64, "step": 1}),
                 "lora_alpha": ("FLOAT", {"default": 32.0, "min": 0.0, "max": 100.0, "step": 0.1}),
-                "target_modules": (
-                    [
-                        "q_proj, v_proj", "query, value", "c_attn", "query_key_value",
-                        "q, v", "in_proj", "query_proj, value_proj", "Wqkv", "qkv_proj"
-                    ],
-                    {
-                        "default": "q_proj, v_proj",
-                    },
-                ),
                 "lora_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "bias": (
-                    ["none", "all", "lora_only"],
-                    {
-                        "default": "none",
-                    },
-                ),
-                "task_type": (
-                    [
-                        "SEQ_2_SEQ_LM", "CAUSAL_LM", "SEQ_CLASSIFICATION", "TOKEN_CLASSIFICATION", "QUESTION_ANSWERING"
-                    ],
-                    {
-                        "default": "SEQ_2_SEQ_LM",
-                    },
-                ),
-                "init_lora_weights": (
-                    [
-                        "kaiming_uniform", "gaussian", "pissa", "pissa_niter_[number of iters]", "olora", "loftq"
-                    ],
-                    {
-                        "default": "kaiming_uniform",
-                    },
-                ),
-                "fan_in_fan_out": ("BOOLEAN", {"default": False}),
-                "modules_to_save": (
-                    [
-                        "embed", "norm", "output", "classifier", "pooler"
-                    ],
-                    {
-                        "default": "",
-                    },
-                ),
-                "layers_to_transform": (
-                    [
-                        "encoder", "decoder", "attention", "feed_forward"
-                    ],
-                    {
-                        "default": "",
-                    },
-                ),
-                "layers_pattern": (
-                    [
-                        "layers", "h", "blocks", "transformer"
-                    ],
-                    {
-                        "default": "",
-                    },
-                ),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
@@ -238,15 +182,7 @@ class Lora_or_adapter_Arguments:
             self,
             r,
             lora_alpha,
-            target_modules,
             lora_dropout,
-            bias,
-            task_type,
-            init_lora_weights,
-            fan_in_fan_out,
-            modules_to_save,
-            layers_to_transform,
-            layers_pattern,
             is_enable=True):
         if not is_enable:
             return (None,)
@@ -254,15 +190,7 @@ class Lora_or_adapter_Arguments:
         lora_args = {
             "r": r,
             "lora_alpha": lora_alpha,
-            "target_modules": target_modules.split(','),  # 将字符串转换为列表
             "lora_dropout": lora_dropout,
-            "bias": bias,
-            "task_type": task_type,
-            "init_lora_weights": init_lora_weights,
-            "fan_in_fan_out": fan_in_fan_out,
-            "modules_to_save": modules_to_save.split(',') if modules_to_save else None,
-            "layers_to_transform": layers_to_transform.split(',') if layers_to_transform else None,
-            "layers_pattern": layers_pattern if layers_pattern else None,
         }
         
         peft_args = json.dumps(lora_args, indent=4)
@@ -276,7 +204,6 @@ class Prefix_Arguments:
             "required": {
                 "prefix_length": ("INT", {"default": 10, "min": 1, "max": 100, "step": 1}),
                 "prefix_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
                 "num_virtual_tokens": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1}),
                 "token_dim": ("INT", {"default": 768, "min": 1, "max": 4096, "step": 1}),
                 "num_transformer_submodules": ("INT", {"default": 1, "min": 1, "max": 12, "step": 1}),
@@ -298,7 +225,6 @@ class Prefix_Arguments:
             self,
             prefix_length,
             prefix_dropout,
-            task_type,
             num_virtual_tokens,
             token_dim,
             num_transformer_submodules,
@@ -312,7 +238,6 @@ class Prefix_Arguments:
         prefix_args = {
             "prefix_length": prefix_length,
             "prefix_dropout": prefix_dropout,
-            "task_type": task_type,
             "num_virtual_tokens": num_virtual_tokens,
             "token_dim": token_dim,
             "num_transformer_submodules": num_transformer_submodules,
@@ -340,7 +265,6 @@ class P_or_Prompt_Arguments:
                 ),
                 "prompt_tuning_init_text": ("STRING", {"default": ""}),
                 "tokenizer_name_or_path": ("STRING", {"default": "bert-base-uncased"}),
-                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
@@ -389,7 +313,6 @@ class IA3_Arguments:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
                 "num_virtual_tokens": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1}),
                 "token_dim": ("INT", {"default": 768, "min": 1, "max": 4096, "step": 1}),
                 "num_transformer_submodules": ("INT", {"default": 1, "min": 1, "max": 12, "step": 1}),

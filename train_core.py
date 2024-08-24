@@ -5,7 +5,12 @@ from datasets import load_from_disk
 from transformers import AutoModelForCausalLM, AutoTokenizer,BitsAndBytesConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 from peft import get_peft_model, LoraConfig, PrefixTuningConfig, PromptTuningConfig, IA3Config
 def train_core(split_datapaths, name_or_path, device, dtype,train_args,fine_tuning_method,peft_args=""):
-    train_args=json.loads(train_args)
+    if train_args !="":
+        train_args=json.loads(train_args)
+    else:
+        train_args={
+            "output_dir": "results",
+        }
     if peft_args !="":
         peft_args=json.loads(peft_args)
     else:
@@ -168,6 +173,7 @@ def train_core(split_datapaths, name_or_path, device, dtype,train_args,fine_tuni
     return eval_summary
 
 if __name__ == '__main__':
+    '''
     parser = argparse.ArgumentParser(description='Train core model')
     parser.add_argument('--split_datapaths', type=str, required=True, help='Path to split data')
     parser.add_argument('--name_or_path', type=str, required=True, help='Model name or path')
@@ -180,3 +186,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_core(args.split_datapaths, args.name_or_path, args.device, args.dtype, args.train_args, args.fine_tuning_method, args.peft_args)
+'''
+    split_datapaths="D:\AI\AIhuitu\Blender_ComfyUI\Blender_ComfyUI_Mini\ComfyUI\custom_nodes\comfyui_LLM_schools\datasets\split_dataset_20240824182641"
+    name_or_path="gpt2"
+    device="cuda"
+    dtype="float16"
+    train_args=""
+    fine_tuning_method="lora"
+    train_core(split_datapaths, name_or_path, device, dtype,train_args,fine_tuning_method,peft_args="")
