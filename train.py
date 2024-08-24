@@ -157,6 +157,8 @@ class LLM_Arguments:
         args=json.dumps(training_args, indent=4)
         return (args,)
 
+import json
+
 class Lora_or_adapter_Arguments:
     @classmethod
     def INPUT_TYPES(s):
@@ -174,13 +176,53 @@ class Lora_or_adapter_Arguments:
                     },
                 ),
                 "lora_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "bias": ("STRING", {"default": "none"}),
-                "task_type": ("STRING", {"default": "SEQ_2_SEQ_LM"}),
-                "init_lora_weights": ("STRING", {"default": "kaiming_uniform"}),
+                "bias": (
+                    ["none", "all", "lora_only"],
+                    {
+                        "default": "none",
+                    },
+                ),
+                "task_type": (
+                    [
+                        "SEQ_2_SEQ_LM", "CAUSAL_LM", "SEQ_CLASSIFICATION", "TOKEN_CLASSIFICATION", "QUESTION_ANSWERING"
+                    ],
+                    {
+                        "default": "SEQ_2_SEQ_LM",
+                    },
+                ),
+                "init_lora_weights": (
+                    [
+                        "kaiming_uniform", "gaussian", "pissa", "pissa_niter_[number of iters]", "olora", "loftq"
+                    ],
+                    {
+                        "default": "kaiming_uniform",
+                    },
+                ),
                 "fan_in_fan_out": ("BOOLEAN", {"default": False}),
-                "modules_to_save": ("STRING", {"default": ""}),
-                "layers_to_transform": ("STRING", {"default": ""}),
-                "layers_pattern": ("STRING", {"default": ""}),
+                "modules_to_save": (
+                    [
+                        "embed", "norm", "output", "classifier", "pooler"
+                    ],
+                    {
+                        "default": "",
+                    },
+                ),
+                "layers_to_transform": (
+                    [
+                        "encoder", "decoder", "attention", "feed_forward"
+                    ],
+                    {
+                        "default": "",
+                    },
+                ),
+                "layers_pattern": (
+                    [
+                        "layers", "h", "blocks", "transformer"
+                    ],
+                    {
+                        "default": "",
+                    },
+                ),
                 "is_enable": ("BOOLEAN", {"default": True}),
             }
         }
@@ -220,11 +262,12 @@ class Lora_or_adapter_Arguments:
             "fan_in_fan_out": fan_in_fan_out,
             "modules_to_save": modules_to_save.split(',') if modules_to_save else None,
             "layers_to_transform": layers_to_transform.split(',') if layers_to_transform else None,
-            "layers_pattern": layers_pattern,
+            "layers_pattern": layers_pattern if layers_pattern else None,
         }
         
         peft_args = json.dumps(lora_args, indent=4)
         return (peft_args,)
+
 
 class Prefix_Arguments:
     @classmethod
