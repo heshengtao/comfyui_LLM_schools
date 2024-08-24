@@ -3,9 +3,13 @@ import json
 import torch
 from datasets import load_from_disk
 from transformers import AutoModelForCausalLM, AutoTokenizer,BitsAndBytesConfig, Trainer, TrainingArguments, DataCollatorForLanguageModeling
-
-def train_core(split_datapaths, name_or_path, device, dtype,train_args):
+from peft import get_peft_model, LoraConfig, PrefixTuningConfig, PromptTuningConfig, IA3Config
+def train_core(split_datapaths, name_or_path, device, dtype,train_args,fine_tuning_method,peft_args=""):
     train_args=json.loads(train_args)
+    if peft_args !="":
+        peft_args=json.loads(peft_args)
+    else:
+        peft_args={}
     dataset = load_from_disk(split_datapaths)
     print("Training dataset loaded!")
     if dtype == "float32":
@@ -117,6 +121,31 @@ def train_core(split_datapaths, name_or_path, device, dtype,train_args):
     # 定义数据整理器
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
+    # 根据fine_tuning_method选择配置
+    if fine_tuning_method == "lora":
+        # 配置LoRA
+        peft_config = LoraConfig(**peft_args)
+    elif fine_tuning_method == "p-tuning":
+        # 配置P-Tuning
+        peft_config = PromptTuningConfig(**peft_args)
+    elif fine_tuning_method == "prefix-tuning":
+        # 配置Prefix Tuning
+        peft_config = PrefixTuningConfig(**peft_args)
+    elif fine_tuning_method == "prompt_tuning":
+        # 配置Prompt Tuning
+        peft_config = PromptTuningConfig(**peft_args)
+    elif fine_tuning_method == "adapter":
+        # 配置Adapter
+        peft_config = LoraConfig(**peft_args)
+    elif fine_tuning_method == "IA3":
+        # 配置IA3
+        peft_config = IA3Config(**peft_args)
+    else:
+        raise ValueError(f"Unsupported fine-tuning method: {fine_tuning_method}")
+
+    # 将配置注入模型
+    model = get_peft_model(model, peft_config)
+
     # 实例化 Trainer
     trainer = Trainer(
         model=model,
@@ -145,7 +174,9 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, required=True, help='Device to use for training')
     parser.add_argument('--dtype', type=str, required=True, help='Data type')
     parser.add_argument('--train_args', type=str, required=True, help='Additional training arguments')
+    parser.add_argument('--fine_tuning_method', type=str, required=True, help='fine tuning method')
+    parser.add_argument('--peft_args', type=str, required=False, help='peft_args')
 
     args = parser.parse_args()
 
-    train_core(args.split_datapaths, args.name_or_path, args.device, args.dtype, args.train_args)
+    train_core(args.split_datapaths, args.name_or_path, args.device, args.dtype, args.train_args, args.fine_tuning_method, args.peft_args)

@@ -35,6 +35,10 @@ class CausalLM_trainer:
                     },
                 ),
                 "args": ("ARGS", {"default": {}}),
+                "fine_tuning_method": (["full_fine_tuning","lora","adapter","p-tuning","prompt_tuning","prefix-tuning","IA3"], {"default": "full_fine_tuning"}),
+            },
+            "optional": {
+                "peft_args": ("ARGS", {"default": {}}),
             }
         }
 
@@ -51,15 +55,28 @@ class CausalLM_trainer:
 
     CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
 
-    def call_train_core(self, split_datapaths, model_name_or_path, device, dtype, args):
-        command = [
+    def call_train_core(self, split_datapaths, model_name_or_path, device, dtype, args,fine_tuning_method,peft_args="\{\}"):
+        if peft_args == "\{\}" or peft_args is None:
+            command = [
             'python', core_path,
             '--split_datapaths', split_datapaths,
             '--name_or_path', model_name_or_path,
             '--device', device,
             '--dtype', dtype,
-            '--train_args', args
+            '--train_args', args,
+            '--fine_tuning_method', fine_tuning_method,
         ]
+        else:
+            command = [
+                'python', core_path,
+                '--split_datapaths', split_datapaths,
+                '--name_or_path', model_name_or_path,
+                '--device', device,
+                '--dtype', dtype,
+                '--train_args', args,
+                '--fine_tuning_method', fine_tuning_method,
+                '--peft_args', peft_args
+            ]
         print(command)
         
         system = platform.system()
@@ -140,9 +157,250 @@ class LLM_Arguments:
         args=json.dumps(training_args, indent=4)
         return (args,)
 
+class Lora_or_adapter_Arguments:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "r": ("INT", {"default": 8, "min": 1, "max": 64, "step": 1}),
+                "lora_alpha": ("FLOAT", {"default": 32.0, "min": 0.0, "max": 100.0, "step": 0.1}),
+                "target_modules": (
+                    [
+                        "q_proj, v_proj", "query, value", "c_attn", "query_key_value",
+                        "q, v", "in_proj", "query_proj, value_proj", "Wqkv", "qkv_proj"
+                    ],
+                    {
+                        "default": "q_proj, v_proj",
+                    },
+                ),
+                "lora_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "bias": ("STRING", {"default": "none"}),
+                "task_type": ("STRING", {"default": "SEQ_2_SEQ_LM"}),
+                "init_lora_weights": ("STRING", {"default": "kaiming_uniform"}),
+                "fan_in_fan_out": ("BOOLEAN", {"default": False}),
+                "modules_to_save": ("STRING", {"default": ""}),
+                "layers_to_transform": ("STRING", {"default": ""}),
+                "layers_pattern": ("STRING", {"default": ""}),
+                "is_enable": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    RETURN_TYPES = ("ARGS",)
+    RETURN_NAMES = ("peft_args",)
+
+    FUNCTION = "Argument"
+
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
+
+    def Argument(
+            self,
+            r,
+            lora_alpha,
+            target_modules,
+            lora_dropout,
+            bias,
+            task_type,
+            init_lora_weights,
+            fan_in_fan_out,
+            modules_to_save,
+            layers_to_transform,
+            layers_pattern,
+            is_enable=True):
+        if not is_enable:
+            return (None,)
+        
+        lora_args = {
+            "r": r,
+            "lora_alpha": lora_alpha,
+            "target_modules": target_modules.split(','),  # 将字符串转换为列表
+            "lora_dropout": lora_dropout,
+            "bias": bias,
+            "task_type": task_type,
+            "init_lora_weights": init_lora_weights,
+            "fan_in_fan_out": fan_in_fan_out,
+            "modules_to_save": modules_to_save.split(',') if modules_to_save else None,
+            "layers_to_transform": layers_to_transform.split(',') if layers_to_transform else None,
+            "layers_pattern": layers_pattern,
+        }
+        
+        peft_args = json.dumps(lora_args, indent=4)
+        return (peft_args,)
+
+class Prefix_Arguments:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "prefix_length": ("INT", {"default": 10, "min": 1, "max": 100, "step": 1}),
+                "prefix_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
+                "num_virtual_tokens": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1}),
+                "token_dim": ("INT", {"default": 768, "min": 1, "max": 4096, "step": 1}),
+                "num_transformer_submodules": ("INT", {"default": 1, "min": 1, "max": 12, "step": 1}),
+                "num_attention_heads": ("INT", {"default": 12, "min": 1, "max": 16, "step": 1}),
+                "num_layers": ("INT", {"default": 12, "min": 1, "max": 24, "step": 1}),
+                "flat": ("BOOLEAN", {"default": False}),
+                "is_enable": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    RETURN_TYPES = ("ARGS",)
+    RETURN_NAMES = ("peft_args",)
+
+    FUNCTION = "Argument"
+
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
+
+    def Argument(
+            self,
+            prefix_length,
+            prefix_dropout,
+            task_type,
+            num_virtual_tokens,
+            token_dim,
+            num_transformer_submodules,
+            num_attention_heads,
+            num_layers,
+            flat,
+            is_enable=True):
+        if not is_enable:
+            return (None,)
+        
+        prefix_args = {
+            "prefix_length": prefix_length,
+            "prefix_dropout": prefix_dropout,
+            "task_type": task_type,
+            "num_virtual_tokens": num_virtual_tokens,
+            "token_dim": token_dim,
+            "num_transformer_submodules": num_transformer_submodules,
+            "num_attention_heads": num_attention_heads,
+            "num_layers": num_layers,
+            "flat": flat,
+        }
+        
+        peft_args = json.dumps(prefix_args, indent=4)
+        return (peft_args,)
+
+class P_or_Prompt_Arguments:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "num_virtual_tokens": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1}),
+                "token_dim": ("INT", {"default": 768, "min": 1, "max": 4096, "step": 1}),
+                "num_transformer_submodules": ("INT", {"default": 1, "min": 1, "max": 12, "step": 1}),
+                "num_attention_heads": ("INT", {"default": 12, "min": 1, "max": 16, "step": 1}),
+                "num_layers": ("INT", {"default": 12, "min": 1, "max": 24, "step": 1}),
+                "prompt_tuning_init": (
+                    ["RANDOM", "TEXT"],
+                    {"default": "RANDOM"}
+                ),
+                "prompt_tuning_init_text": ("STRING", {"default": ""}),
+                "tokenizer_name_or_path": ("STRING", {"default": "bert-base-uncased"}),
+                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
+                "is_enable": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    RETURN_TYPES = ("ARGS",)
+    RETURN_NAMES = ("peft_args",)
+
+    FUNCTION = "Argument"
+
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
+
+    def Argument(
+            self,
+            num_virtual_tokens,
+            token_dim,
+            num_transformer_submodules,
+            num_attention_heads,
+            num_layers,
+            prompt_tuning_init,
+            prompt_tuning_init_text,
+            tokenizer_name_or_path,
+            task_type,
+            is_enable=True):
+        if not is_enable:
+            return (None,)
+        
+        prompt_args = {
+            "num_virtual_tokens": num_virtual_tokens,
+            "token_dim": token_dim,
+            "num_transformer_submodules": num_transformer_submodules,
+            "num_attention_heads": num_attention_heads,
+            "num_layers": num_layers,
+            "prompt_tuning_init": prompt_tuning_init,
+            "prompt_tuning_init_text": prompt_tuning_init_text,
+            "tokenizer_name_or_path": tokenizer_name_or_path,
+            "task_type": task_type,
+        }
+        
+        peft_args = json.dumps(prompt_args, indent=4)
+        return (peft_args,)
+
+import json
+
+class IA3_Arguments:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "task_type": (["QUESTION_ANSWERING","SEQ_2_SEQ_LM", "CAUSAL_LM","SEQ_CLASSIFICATION","TOKEN_CLASSIFICATION"], {"default": "QUESTION_ANSWERING"}),
+                "num_virtual_tokens": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1}),
+                "token_dim": ("INT", {"default": 768, "min": 1, "max": 4096, "step": 1}),
+                "num_transformer_submodules": ("INT", {"default": 1, "min": 1, "max": 12, "step": 1}),
+                "num_attention_heads": ("INT", {"default": 12, "min": 1, "max": 16, "step": 1}),
+                "num_layers": ("INT", {"default": 12, "min": 1, "max": 24, "step": 1}),
+                "ia3_alpha": ("FLOAT", {"default": 32.0, "min": 0.0, "max": 100.0, "step": 0.1}),
+                "ia3_dropout": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "is_enable": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    RETURN_TYPES = ("ARGS",)
+    RETURN_NAMES = ("peft_args",)
+
+    FUNCTION = "Argument"
+
+    CATEGORY = "大模型学校（llm_schools）/模型训练（Model Training）"
+
+    def Argument(
+            self,
+            task_type,
+            num_virtual_tokens,
+            token_dim,
+            num_transformer_submodules,
+            num_attention_heads,
+            num_layers,
+            ia3_alpha,
+            ia3_dropout,
+            is_enable=True):
+        if not is_enable:
+            return (None,)
+        
+        ia3_args = {
+            "task_type": task_type,
+            "num_virtual_tokens": num_virtual_tokens,
+            "token_dim": token_dim,
+            "num_transformer_submodules": num_transformer_submodules,
+            "num_attention_heads": num_attention_heads,
+            "num_layers": num_layers,
+            "ia3_alpha": ia3_alpha,
+            "ia3_dropout": ia3_dropout,
+        }
+        
+        peft_args = json.dumps(ia3_args, indent=4)
+        return (peft_args,)
+
+
 NODE_CLASS_MAPPINGS = {
     "CausalLM_trainer": CausalLM_trainer,
     "LLM_Arguments":LLM_Arguments,
+    "Lora_or_adapter_Arguments":Lora_or_adapter_Arguments,
+    "Prefix_Arguments":Prefix_Arguments,
+    "P_or_Prompt_Arguments":P_or_Prompt_Arguments,
+    "IA3_Arguments":IA3_Arguments,
     }
 
 # 获取系统语言
@@ -163,10 +421,18 @@ if language == "zh_CN" or language=="en_US":
 if lang == "zh_CN":
     NODE_DISPLAY_NAME_MAPPINGS = {
         "CausalLM_trainer": "因果语言模型训练器",
-        "LLM_Arguments": "LLM 参数",
+        "LLM_Arguments": "LLM参数",
+        "Lora_or_adapter_Arguments":"LoRA或Adapter参数",
+        "Prefix_Arguments":"Prefix参数",
+        "P_or_Prompt_Arguments":"P或Prompt参数",
+        "IA3_Arguments":"IA3参数",
         }
 else:
     NODE_DISPLAY_NAME_MAPPINGS = {
         "CausalLM_trainer": "Causal Language Model Trainer",
         "LLM_Arguments": "LLM Arguments",
+        "Lora_or_adapter_Arguments":"LoRA or Adapter Arguments",
+        "Prefix_Arguments":"Prefix Arguments",
+        "P_or_Prompt_Arguments":"P or Prompt Arguments",
+        "IA3_Arguments":"IA3 Arguments",
         }
