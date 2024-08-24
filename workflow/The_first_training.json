@@ -1,0 +1,277 @@
+{
+  "last_node_id": 104,
+  "last_link_id": 78,
+  "nodes": [
+    {
+      "id": 103,
+      "type": "split_dataset",
+      "pos": [
+        149,
+        820
+      ],
+      "size": {
+        "0": 315,
+        "1": 198
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "split_datapaths",
+          "type": "STRING",
+          "links": [
+            77
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "split_datapaths"
+        },
+        {
+          "name": "log",
+          "type": "STRING",
+          "links": [
+            78
+          ],
+          "shape": 3,
+          "label": "log"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "split_dataset"
+      },
+      "widgets_values": [
+        "D:\\AI\\AIhuitu\\Blender_ComfyUI\\Blender_ComfyUI_Mini\\ComfyUI\\custom_nodes\\comfyui_LLM_schools\\datasets\\datasets--rajpurkar--squad_v2\\snapshots\\3ffb306f725f7d2ce8394bc1873b24868140c412",
+        "split_dataset",
+        0.8,
+        0.1,
+        0.1,
+        true
+      ]
+    },
+    {
+      "id": 100,
+      "type": "CausalLM_trainer",
+      "pos": [
+        643,
+        1133
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "args",
+          "type": "ARGS",
+          "link": 74,
+          "label": "args"
+        },
+        {
+          "name": "split_datapaths",
+          "type": "STRING",
+          "link": 77,
+          "widget": {
+            "name": "split_datapaths"
+          },
+          "label": "split_datapaths"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "eval_summary",
+          "type": "STRING",
+          "links": [
+            73
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "eval_summary"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CausalLM_trainer"
+      },
+      "widgets_values": [
+        "D:\\AI\\AIhuitu\\Blender_ComfyUI\\Blender_ComfyUI_Mini\\ComfyUI\\custom_nodes\\comfyui_LLM_schools\\datasets\\datasets--rajpurkar--squad_v2\\snapshots\\3ffb306f725f7d2ce8394bc1873b24868140c412\\split_datasets",
+        "gpt2",
+        "auto",
+        "float32"
+      ]
+    },
+    {
+      "id": 101,
+      "type": "LLM_Arguments",
+      "pos": [
+        168,
+        1153
+      ],
+      "size": {
+        "0": 315,
+        "1": 274
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "args",
+          "type": "ARGS",
+          "links": [
+            74
+          ],
+          "shape": 3,
+          "label": "args"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LLM_Arguments"
+      },
+      "widgets_values": [
+        "results",
+        "epoch",
+        0.00002,
+        1,
+        1,
+        3,
+        0.01,
+        1000,
+        2,
+        true
+      ]
+    },
+    {
+      "id": 91,
+      "type": "show_text_party",
+      "pos": [
+        1133,
+        1138
+      ],
+      "size": {
+        "0": 315,
+        "1": 76
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 73,
+          "widget": {
+            "name": "text"
+          },
+          "label": "text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6,
+          "label": "STRING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "show_text_party"
+      },
+      "widgets_values": [
+        "",
+        "训练任务已启动，请查看终端输出。"
+      ]
+    },
+    {
+      "id": 104,
+      "type": "show_text_party",
+      "pos": [
+        589,
+        738
+      ],
+      "size": {
+        "0": 420.37384033203125,
+        "1": 313.4893798828125
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 78,
+          "widget": {
+            "name": "text"
+          },
+          "label": "text"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6,
+          "label": "STRING"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "show_text_party"
+      },
+      "widgets_values": [
+        "",
+        "Train dataset head:\n                         id  ...                                            answers\n0  5726b702f1498d1400e8e8aa  ...  {'text': ['Orthodox church'], 'answer_start': ...\n1  56d1297b17492d1400aabaf2  ...  {'text': ['September 2010'], 'answer_start': [3]}\n2  572fb448947a6a140053cbbd  ...  {'text': ['2–10 nanometres'], 'answer_start': ...\n3  572673e0dd62a815002e855f  ...  {'text': ['Battle of Manila in 1945'], 'answer...\n4  572813bf4b864d19001643ed  ...  {'text': ['new elected government'], 'answer_s...\n\n[5 rows x 5 columns]\n\nValidation dataset head:\n                         id  ...                                            answers\n0  57267331708984140094c68a  ...            {'text': ['40%'], 'answer_start': [99]}\n1  5730d9efb54a4f140068ccac  ...  {'text': ['military and economic strength, as ...\n2  572910671d0469140077900a  ...         {'text': ['three'], 'answer_start': [519]}\n3  5725f4d2271a42140099d36b  ...  {'text': ['Xanthippus of Carthage'], 'answer_s...\n4  56dde7259a695914005b9699  ...  {'text': ['Second World War'], 'answer_start':...\n\n[5 rows x 5 columns]\n\nTest dataset head:\n                         id  ...                                            answers\n0  573439c8d058e614000b6b55  ...  {'text': ['March 20, 1880'], 'answer_start': [...\n1  56f7e518aef2371900625c4e  ...  {'text': ['related by blood or marriage'], 'an...\n2  572ea40dcb0c0d14000f13d3  ...  {'text': ['600 m/s (2,200 km/h; 1,300 mph)'], ...\n3  5735b876dc94161900571f4c  ...            {'text': ['85'], 'answer_start': [501]}\n4  572f8f2eb2c2fd14005681fe  ...      {'text': ['severity'], 'answer_start': [117]}\n\n[5 rows x 5 columns]\n\n"
+      ]
+    }
+  ],
+  "links": [
+    [
+      73,
+      100,
+      0,
+      91,
+      0,
+      "STRING"
+    ],
+    [
+      74,
+      101,
+      0,
+      100,
+      0,
+      "ARGS"
+    ],
+    [
+      77,
+      103,
+      0,
+      100,
+      1,
+      "STRING"
+    ],
+    [
+      78,
+      103,
+      1,
+      104,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9646149645000102,
+      "offset": [
+        -40.07517576489053,
+        -624.3759680238686
+      ]
+    }
+  },
+  "version": 0.4
+}

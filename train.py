@@ -47,7 +47,7 @@ class CausalLM_trainer:
         "STRING",
     )
     RETURN_NAMES = (
-        "eval_summary",
+        "log",
     )
 
     FUNCTION = "call_train_core"
