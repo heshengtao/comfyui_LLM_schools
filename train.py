@@ -95,7 +95,7 @@ class CausalLM_trainer:
         else:
             raise Exception(f"不支持的操作系统: {system}")
 
-        return (f"训练任务已启动，请查看终端输出。模型检查点将被保存到 comfyui根目录下的{args['output_dir']}，或者是你填入的文件夹绝对路径下。The training task has started, please check the end point output. Model checkpoints will be saved to {args ['output_dir']} in the root directory of comfyui, or in the absolute path of the folder you filled in.",)
+        return (f"训练任务已启动，请查看终端输出。模型检查点将被保存到你填入的文件夹绝对路径下。",)
     @classmethod
     def IS_CHANGED(s):
         # 生成当前时间的哈希值
