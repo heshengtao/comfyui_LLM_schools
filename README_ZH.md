@@ -9,4 +9,4 @@
 
 ####
 
-1. Currently supports full fine-tuning of AutoModelForCausalLM classes in the transformer library, refer to workflow [The_first_training](workflow/The_first_training json)
+1. 目前已支持transformer库中的AutoModelForCausalLM类的全量微调，参考工作流[The_first_training](workflow/The_first_training.json)

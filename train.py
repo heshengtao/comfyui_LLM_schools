@@ -1,14 +1,9 @@
 import datetime
-import gc
 import hashlib
 import json
 import locale
 import subprocess
-from adapters import AdapterConfig, AdapterTrainer
 import torch
-from transformers import AutoTokenizer,DataCollatorForLanguageModeling,AutoModelForCausalLM,TrainingArguments,Trainer
-if torch.cuda.is_available():
-    from transformers import BitsAndBytesConfig
 import os
 import torch.nn.functional as F
 current_dir = os.path.dirname(os.path.abspath(__file__))
