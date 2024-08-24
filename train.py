@@ -79,7 +79,7 @@ class CausalLM_trainer:
             # 在 Linux 上打印进程号并提醒用户自行查看
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             print(f"子进程 PID: {process.pid}")
-            print("请在终端中使用 `ps -p <PID>` 或 `top` 命令查看进程输出。")
+            print(f"请在终端中使用 `ps -p {process.pid}` 或 `top` 命令查看进程输出。")
         else:
             raise Exception(f"不支持的操作系统: {system}")
 
