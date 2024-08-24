@@ -9,4 +9,4 @@
 
 ####
 
-1. Currently supports full fine-tuning of AutoModelForCausalLM classes in the transformer library, refer to workflow [The_first_training](workflow/The_first_training json)
+1. Currently supports full fine-tuning of AutoModelForCausalLM classes in the transformer library, refer to workflow [The_first_training](workflow/The_first_training.json)
